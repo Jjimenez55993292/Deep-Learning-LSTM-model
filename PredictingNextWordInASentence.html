@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="generator" content="pandoc" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes"
+    />
+    <title>Predicting The Next Word In A Sentence</title>
+    <style>
+      html {
+        line-height: 1.5;
+        font-family: Georgia, serif;
+        font-size: 20px;
+        color: #1a1a1a;
+        background-color: #ffffff;
+      }
+      body {
+        margin: 0 auto;
+        max-width: 36em;
+        padding-left: 50px;
+        padding-right: 50px;
+        padding-top: 50px;
+        padding-bottom: 50px;
+        hyphens: auto;
+        word-wrap: break-word;
+        text-rendering: optimizeLegibility;
+        font-kerning: normal;
+      }
+      @media (max-width: 600px) {
+        body {
+          font-size: 0.9em;
+          padding: 1em;
+        }
+      }
+      @media print {
+        body {
+          background-color: #ffffff;
+          color: black;
+          font-size: 12pt;
+        }
+        p,
+        h2,
+        h3 {
+          orphans: 3;
+          widows: 3;
+        }
+        h2,
+        h3,
+        h4 {
+          page-break-after: avoid;
+        }
+      }
+      p {
+        margin: 1em 0;
+      }
+      a {
+        color: #1a1a1a;
+      }
+      a:visited {
+        color: #1a1a1a;
+      }
+      img {
+        max-width: 100%;
+      }
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        margin-top: 1.4em;
+      }
+      h5,
+      h6 {
+        font-size: 1em;
+        font-style: italic;
+      }
+      h6 {
+        font-weight: normal;
+      }
+      ol,
+      ul {
+        padding-left: 1.7em;
+        margin-top: 1em;
+      }
+      li > ol,
+      li > ul {
+        margin-top: 0;
+      }
+      blockquote {
+        margin: 1em 0 1em 1.7em;
+        padding-left: 1em;
+        border-left: 2px solid #e6e6e6;
+        color: #606060;
+      }
+      code {
+        font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+        font-size: 85%;
+        margin: 0;
+      }
+      pre {
+        margin: 1em 0;
+        overflow: auto;
+      }
+      pre code {
+        padding: 0;
+        overflow: visible;
+      }
+      .sourceCode {
+        background-color: transparent;
+        overflow: visible;
+      }
+      hr {
+        background-color: #1a1a1a;
+        border: none;
+        height: 1px;
+        margin: 1em 0;
+      }
+      table {
+        margin: 1em 0;
+        border-collapse: collapse;
+        width: 100%;
+        overflow-x: auto;
+        display: block;
+        font-variant-numeric: lining-nums tabular-nums;
+      }
+      table caption {
+        margin-bottom: 0.75em;
+      }
+      tbody {
+        margin-top: 0.5em;
+        border-top: 1px solid #1a1a1a;
+        border-bottom: 1px solid #1a1a1a;
+      }
+      th {
+        border-top: 1px solid #1a1a1a;
+        padding: 0.25em 0.5em 0.25em 0.5em;
+      }
+      td {
+        padding: 0.125em 0.5em 0.25em 0.5em;
+      }
+      header {
+        margin-bottom: 4em;
+        text-align: center;
+      }
+      #TOC li {
+        list-style: none;
+      }
+      #TOC a:not(:hover) {
+        text-decoration: none;
+      }
+      code {
+        white-space: pre-wrap;
+      }
+      span.smallcaps {
+        font-variant: small-caps;
+      }
+      span.underline {
+        text-decoration: underline;
+      }
+      div.column {
+        display: inline-block;
+        vertical-align: top;
+        width: 50%;
+      }
+      div.hanging-indent {
+        margin-left: 1.5em;
+        text-indent: -1.5em;
+      }
+      ul.task-list {
+        list-style: none;
+      }
+      pre > code.sourceCode {
+        white-space: pre;
+        position: relative;
+      }
+      pre > code.sourceCode > span {
+        display: inline-block;
+        line-height: 1.25;
+      }
+      pre > code.sourceCode > span:empty {
+        height: 1.2em;
+      }
+      .sourceCode {
+        overflow: visible;
+      }
+      code.sourceCode > span {
+        color: inherit;
+        text-decoration: inherit;
+      }
+      div.sourceCode {
+        margin: 1em 0;
+      }
+      pre.sourceCode {
+        margin: 0;
+      }
+      @media screen {
+        div.sourceCode {
+          overflow: auto;
+        }
+      }
+      @media print {
+        pre > code.sourceCode {
+          white-space: pre-wrap;
+        }
+        pre > code.sourceCode > span {
+          text-indent: -5em;
+          padding-left: 5em;
+        }
+      }
+      pre.numberSource code {
+        counter-reset: source-line 0;
+      }
+      pre.numberSource code > span {
+        position: relative;
+        left: -4em;
+        counter-increment: source-line;
+      }
+      pre.numberSource code > span > a:first-child::before {
+        content: counter(source-line);
+        position: relative;
+        left: -1em;
+        text-align: right;
+        vertical-align: baseline;
+        border: none;
+        display: inline-block;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        padding: 0 4px;
+        width: 4em;
+        color: #aaaaaa;
+      }
+      pre.numberSource {
+        margin-left: 3em;
+        border-left: 1px solid #aaaaaa;
+        padding-left: 4px;
+      }
+      div.sourceCode {
+      }
+      @media screen {
+        pre > code.sourceCode > span > a:first-child::before {
+          text-decoration: underline;
+        }
+      }
+      code span.al {
+        color: #ff0000;
+        font-weight: bold;
+      } /* Alert */
+      code span.an {
+        color: #60a0b0;
+        font-weight: bold;
+        font-style: italic;
+      } /* Annotation */
+      code span.at {
+        color: #7d9029;
+      } /* Attribute */
+      code span.bn {
+        color: #40a070;
+      } /* BaseN */
+      code span.bu {
+      } /* BuiltIn */
+      code span.cf {
+        color: #007020;
+        font-weight: bold;
+      } /* ControlFlow */
+      code span.ch {
+        color: #4070a0;
+      } /* Char */
+      code span.cn {
+        color: #880000;
+      } /* Constant */
+      code span.co {
+        color: #60a0b0;
+        font-style: italic;
+      } /* Comment */
+      code span.cv {
+        color: #60a0b0;
+        font-weight: bold;
+        font-style: italic;
+      } /* CommentVar */
+      code span.do {
+        color: #ba2121;
+        font-style: italic;
+      } /* Documentation */
+      code span.dt {
+        color: #902000;
+      } /* DataType */
+      code span.dv {
+        color: #40a070;
+      } /* DecVal */
+      code span.er {
+        color: #ff0000;
+        font-weight: bold;
+      } /* Error */
+      code span.ex {
+      } /* Extension */
+      code span.fl {
+        color: #40a070;
+      } /* Float */
+      code span.fu {
+        color: #06287e;
+      } /* Function */
+      code span.im {
+      } /* Import */
+      code span.in {
+        color: #60a0b0;
+        font-weight: bold;
+        font-style: italic;
+      } /* Information */
+      code span.kw {
+        color: #007020;
+        font-weight: bold;
+      } /* Keyword */
+      code span.op {
+        color: #666666;
+      } /* Operator */
+      code span.ot {
+        color: #007020;
+      } /* Other */
+      code span.pp {
+        color: #bc7a00;
+      } /* Preprocessor */
+      code span.sc {
+        color: #4070a0;
+      } /* SpecialChar */
+      code span.ss {
+        color: #bb6688;
+      } /* SpecialString */
+      code span.st {
+        color: #4070a0;
+      } /* String */
+      code span.va {
+        color: #19177c;
+      } /* Variable */
+      code span.vs {
+        color: #4070a0;
+      } /* VerbatimString */
+      code span.wa {
+        color: #60a0b0;
+        font-weight: bold;
+        font-style: italic;
+      } /* Warning */
+      .display.math {
+        display: block;
+        text-align: center;
+        margin: 0.5rem auto;
+      }
+    </style>
+    <!--[if lt IE 9]>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <section
+      id="introduction-predicting-the-next-word-in-a-sentence"
+      class="cell markdown"
+      data-colab='{"base_uri":"https://localhost:8080/"}'
+      id="dbJSgH5DKbqq"
+      data-outputId="15adc8aa-e981-431b-b864-137bc9de8c59"
+    >
+      <h1>Introduction: Predicting The Next Word In A Sentence</h1>
+      <p>
+        In this project, we will be working on a text dataset, a book written by
+        Plato, “The Republic.” This project will preprocess the data into a more
+        usable format. Will train and develop an algorithm model using the
+        sequence-based datasets. We will be using Deep Learning (Long Short-term
+        Memory) LSTM model to develop our algorithm model. This model is based
+        on Neural Net-Architecture and provides very high performance on
+        sequence-based datasets. It has a feedback structure helping the model
+        remember the sequence of data input and the changes in the output
+        depending on what is happening to predicit the next word in a setence.
+      </p>
+    </section>
+    <div class="cell code" data-execution_count="2" id="iEAh-9m9MWl5">
+      <div class="sourceCode" id="cb1">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> string</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#Provides a set of diverse algorithms for an LP and for Computational Linguistics.</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> nltk</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> string</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> nltk.corpus <span class="im">import</span> stopwords</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pkg_resources</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pickle</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> nltk</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re, string, json</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tqdm.notebook <span class="im">import</span> tqdm</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> nltk.tokenize <span class="im">import</span> word_tokenize</span></code></pre>
+      </div>
+    </div>
+    <div class="cell code" data-execution_count="3" id="QjlXYTtaKvAL">
+      <div class="sourceCode" id="cb2">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> numpy <span class="im">import</span> array</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pickle <span class="im">import</span> dump</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keras.preprocessing.text <span class="im">import</span> Tokenizer</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#keras&#39;s library function that is embedded into the TensorFlow Library</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">#TensorFlow provides both high level and low level APIs for working with deep learning models</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#Using packages required to handle string data. </span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tensorflow.keras.utils <span class="im">import</span> to_categorical</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keras.models <span class="im">import</span> Sequential</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keras.layers <span class="im">import</span> Dense</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keras.layers <span class="im">import</span> LSTM</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keras.layers <span class="im">import</span> Embedding</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> random <span class="im">import</span> randint</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pickle <span class="im">import</span> load</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keras.models <span class="im">import</span> load_model</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keras.preprocessing.sequence <span class="im">import</span> pad_sequences</span></code></pre>
+      </div>
+    </div>
+    <div class="cell code" id="L9JJQyhHKxv3">
+      <div class="sourceCode" id="cb3">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load doc into memory</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> load_doc(filename):</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># open the file as read only</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">file</span> <span class="op">=</span> <span class="bu">open</span>(filename, <span class="st">&#39;r&#39;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># read all text</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    text <span class="op">=</span> <span class="bu">file</span>.read()</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># close the file</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">file</span>.close()</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> text</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># turn a doc into clean tokens</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> clean_doc(doc):</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># replace &#39;--&#39; with a space &#39; &#39;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    doc <span class="op">=</span> doc.replace(<span class="st">&#39;--&#39;</span>, <span class="st">&#39; &#39;</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># split into tokens by white space</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    tokens <span class="op">=</span> doc.split()</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># remove punctuation from each token</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    table <span class="op">=</span> <span class="bu">str</span>.maketrans(<span class="st">&#39;&#39;</span>, <span class="st">&#39;&#39;</span>, string.punctuation)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    tokens <span class="op">=</span> [w.translate(table) <span class="cf">for</span> w <span class="kw">in</span> tokens]</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># remove remaining tokens that are not alphabetic</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    tokens <span class="op">=</span> [word <span class="cf">for</span> word <span class="kw">in</span> tokens <span class="cf">if</span> word.isalpha()]</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># make lower case</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    tokens <span class="op">=</span> [word.lower() <span class="cf">for</span> word <span class="kw">in</span> tokens]</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tokens</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co"># save tokens to file, one dialog per line</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> save_doc(lines, filename):</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> <span class="st">&#39;</span><span class="ch">\n</span><span class="st">&#39;</span>.join(lines)</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    <span class="bu">file</span> <span class="op">=</span> <span class="bu">open</span>(filename, <span class="st">&#39;w&#39;</span>)</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    <span class="bu">file</span>.write(data)</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    <span class="bu">file</span>.close()</span></code></pre>
+      </div>
+    </div>
+    <section id="token_word-funciton" class="cell markdown">
+      <h3>Token_Word Funciton:</h3>
+      <p>
+        We develope the tokenize_word function. The first thing is to understand
+        the tokenization process. The process of breaking down the text dataset
+        and building each word in the set into individual tokens and this is
+        known as tokenization. We are using the tokenize_word function. In
+        machine learning and deep learning architectures, we cannot send or
+        input strings data types into the models. We convert the string data
+        into a number data type. Then the first process is tokenization. We can
+        perform computation takes on actual numbers or a list of numbers. This
+        is called word vectorization or words embeddings.
+      </p>
+      <p>
+        Example: “I am going today” converts into using tokenization to convert
+        to list [“I’, “am”, “going”, “today”] dataset. Then data is into vectors
+        representing our word dataset. We are creating numerical data from text
+        data that comes from our dataset.
+      </p>
+    </section>
+    <div class="cell code" id="Kju8JRUSLTHr">
+      <div class="sourceCode" id="cb4">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> tokenize_word(sentences):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Tokenize sentences into tokens (words)</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">    </span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">    Args:</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co">        sentences: List of strings</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">    </span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">    Returns:</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">        List of lists of tokens</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;Starting Cleaning Process&quot;</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    tokenized_sentences <span class="op">=</span> []</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> sentence <span class="kw">in</span> tqdm(sentences):</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Convert to lowercase letters</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        sentence <span class="op">=</span> cleanhtml(sentence)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>        sentence <span class="op">=</span> _replace_urls(sentence)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        sentence <span class="op">=</span> remove_email(sentence)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>        <span class="co">#Anything that is not a lower or upper case word remove from our sentence repalce with a empty string</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        sentence <span class="op">=</span> re.sub(<span class="vs">r&#39;[^a-zA-Z]&#39;</span>, <span class="st">&#39; &#39;</span>, sentence)</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>        sentence <span class="op">=</span> sentence.lower()</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        sentence <span class="op">=</span> misc(sentence)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>        <span class="co"># tokenized = nltk.word_tokenize(sentence)</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>        <span class="co"># append the list of words to the list of lists</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>        <span class="co"># tokenized_sentences.append(tokenized)</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>        tokenized_sentences.append(sentence)</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tokenized_sentences</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="co">#We use particular functions below to clean the string list.</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> cleanhtml(raw_html):</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    cleanr <span class="op">=</span> re.<span class="bu">compile</span>(<span class="st">&#39;&lt;.*?&gt;&#39;</span>)</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>    cleantext <span class="op">=</span> re.sub(cleanr, <span class="st">&#39;&#39;</span>, raw_html)</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> cleantext</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a><span class="co">#Function replaces and removes URLS from the dataset.</span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _replace_urls(data):</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    <span class="co">#Removing URLs with a regular expression</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>    url_pattern <span class="op">=</span> re.<span class="bu">compile</span>(<span class="vs">r&#39;https?://\S+|www\.\S+&#39;</span>)</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> url_pattern.sub(<span class="vs">r&#39;&#39;</span>, data)</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> data</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a><span class="co">#Function removes emails </span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> remove_email(data):</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Remove Emails</span></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> re.sub(<span class="st">&#39;\S*@\S*\s?&#39;</span>, <span class="st">&#39;&#39;</span>, data)</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> data</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a><span class="co">#Function removes other random data not needed</span></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> misc(data):</span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Remove new line characters</span></span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> re.sub(<span class="st">&#39;\s+&#39;</span>, <span class="st">&#39; &#39;</span>, data)</span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Remove distracting single quotes</span></span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> re.sub(<span class="st">&quot;</span><span class="ch">\&#39;</span><span class="st">&quot;</span>, <span class="st">&quot;&quot;</span>, data)</span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> re.sub(<span class="st">&quot;ww+&quot;</span>, <span class="st">&quot;&quot;</span>, data)</span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Removing roman-case:</span></span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>    MAYBE_ROMAN <span class="op">=</span> re.<span class="bu">compile</span>(<span class="vs">r&#39;(\b[MDCLXVI]+\b)(\.)?&#39;</span>, re.I)</span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> re.sub(MAYBE_ROMAN, <span class="st">&quot;&quot;</span>, data)</span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> data</span></code></pre>
+      </div>
+    </div>
+    <div class="cell code" id="hdzDdtS6M3NW">
+      <div class="sourceCode" id="cb5">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#This function is looking for sentences that the number of tokens are less than 5 remove then sentence. </span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#Sentences with less than 5 tokens are to short for our LSTM model to be useful.</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> littleCleaning(sentences):</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;Starting cleaning Process&quot;</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    ret_list <span class="op">=</span> []</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> sentence <span class="kw">in</span> sentences:</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        words <span class="op">=</span> sentence.split(<span class="st">&quot; &quot;</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(words) <span class="op">&gt;</span> <span class="dv">5</span>:</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>            ret_list.append(sentence)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> ret_list</span></code></pre>
+      </div>
+    </div>
+    <div class="cell code" data-execution_count="4" id="Zg8vn9YuMI9f">
+      <div class="sourceCode" id="cb6">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Download the Natural Language Processing with Python package that is needed</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">&#39;wordnet&#39;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">&#39;punkt&#39;</span>)</span></code></pre>
+      </div>
+      <div class="output stream stderr">
+        <pre><code>[nltk_data] Downloading package wordnet to
+[nltk_data]     C:\Users\PC-8783213\AppData\Roaming\nltk_data...
+[nltk_data]   Package wordnet is already up-to-date!
+[nltk_data] Downloading package punkt to
+[nltk_data]     C:\Users\PC-8783213\AppData\Roaming\nltk_data...
+[nltk_data]   Package punkt is already up-to-date!
+</code></pre>
+      </div>
+      <div class="output execute_result" data-execution_count="4">
+        <pre><code>True</code></pre>
+      </div>
+    </div>
+    <div
+      class="cell code"
+      data-colab='{"base_uri":"https://localhost:8080/"}'
+      id="-dsejedsMLRR"
+      data-outputId="5a0cf250-3dd9-4bc6-bf39-d51a950e0db3"
+    >
+      <div class="sourceCode" id="cb9">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>path <span class="op">=</span> <span class="st">&#39;Dataset/republic.txt&#39;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> <span class="bu">open</span>(path).read().lower()</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&#39;length of the corpus is: :&#39;</span>, <span class="bu">len</span>(text))</span></code></pre>
+      </div>
+      <div class="output stream stdout">
+        <pre><code>length of the corpus is: : 1174387
+</code></pre>
+      </div>
+    </div>
+    <div
+      class="cell code"
+      data-colab='{"base_uri":"https://localhost:8080/"}'
+      id="jCNWKWO_MhcK"
+      data-outputId="e4fa1fe4-4829-485f-b42b-f53ca49b7d07"
+    >
+      <div class="sourceCode" id="cb11">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Converting the data into lists.</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Creating sentences into strings using the split fuction</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>data_list <span class="op">=</span> text.split(<span class="st">&quot;.&quot;</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>data_list[:<span class="dv">20</span>]</span></code></pre>
+      </div>
+      <div class="output execute_result" data-execution_count="9">
+        <pre><code>[&#39;the project gutenberg ebook of the republic, by plato\n\nthis ebook is for the use of anyone anywhere in the united states and\nmost other parts of the world at no cost and with almost no restrictions\nwhatsoever&#39;,
+ &#39; you may copy it, give it away or re-use it under the terms\nof the project gutenberg license included with this ebook or online at\nwww&#39;,
+ &#39;gutenberg&#39;,
+ &#39;org&#39;,
+ &#39; if you are not located in the united states, you\nwill have to check the laws of the country where you are located before\nusing this ebook&#39;,
+ &#39;\n\ntitle: the republic\n\nauthor: plato\n\ntranslator: b&#39;,
+ &#39; jowett\n\nrelease date: october, 1998 [ebook #1497]\n[most recently updated: september 11, 2021]\n\nlanguage: english\n\n\nproduced by: sue asscher and david widger\n\n*** start of the project gutenberg ebook the republic ***\n\n\n\n\nthe republic\n\nby plato\n\ntranslated by benjamin jowett\n\nnote: see also “the republic” by plato, jowett, ebook #150\n\n\ncontents\n\n introduction and analysis&#39;,
+ &#39;\n the republic&#39;,
+ &#39;\n persons of the dialogue&#39;,
+ &#39;\n book i&#39;,
+ &#39;\n book ii&#39;,
+ &#39;\n book iii&#39;,
+ &#39;\n book iv&#39;,
+ &#39;\n book v&#39;,
+ &#39;\n book vi&#39;,
+ &#39;\n book vii&#39;,
+ &#39;\n book viii&#39;,
+ &#39;\n book ix&#39;,
+ &#39;\n book x&#39;,
+ &#39;\n\n\n\n\n introduction and analysis&#39;]</code></pre>
+      </div>
+    </div>
+    <div
+      class="cell code"
+      data-colab='{"height":232,"referenced_widgets":["c14c6d187eb64f729cc53fa007733e27","956f50b5dafa484a9eee9a9f52a4bac3","a8e83132c4a24ec4b2d1653ece9fbd1d","a2e72ed1e4ca4485b9ecc73f91e3d59e","b1d571d9f1d24c96a3d96bfdd98a5e4f","8a93bf256083460a8090989c6c4b0883","29b4e1545e5940da9e15399f19ee5840","abbf38b03dce49ad866e552fb229cd5b","33fb7c12105c4d2094f65e7b47704d66","ca5ada46b47b48dfbf8e1659014c6bea","600bf0cea5374371b623d699c9f1f77e"],"base_uri":"https://localhost:8080/"}'
+      id="suY56Yf2Msxd"
+      data-outputId="ba1d0fff-8fdb-439f-b30b-5908001958fe"
+    >
+      <div class="sourceCode" id="cb13">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>pro_sentences <span class="op">=</span> []</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Function to clean up data</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> normalization_pipeline(sentences):</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;Starting Normalization Process&quot;</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    sentences <span class="op">=</span> tokenize_word(sentences)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    sentences <span class="op">=</span> littleCleaning(sentences)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;Normalization Process Finished&quot;</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> sentences</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>pro_sentences <span class="op">=</span> normalization_pipeline(data_list)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>pro_sentences[: <span class="dv">5</span>]</span></code></pre>
+      </div>
+      <div class="output stream stdout">
+        <pre><code>Starting Normalization Process
+Starting Cleaning Process
+</code></pre>
+      </div>
+      <div class="output display_data">
+        <div class="sourceCode" id="cb15">
+          <pre
+            class="sourceCode json"
+          ><code class="sourceCode json"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;version_major&quot;</span><span class="fu">:</span><span class="dv">2</span><span class="fu">,</span><span class="dt">&quot;version_minor&quot;</span><span class="fu">:</span><span class="dv">0</span><span class="fu">,</span><span class="dt">&quot;model_id&quot;</span><span class="fu">:</span><span class="st">&quot;c14c6d187eb64f729cc53fa007733e27&quot;</span><span class="fu">}</span></span></code></pre>
+        </div>
+      </div>
+      <div class="output stream stdout">
+        <pre><code>Starting cleaning Process
+Normalization Process Finished
+</code></pre>
+      </div>
+      <div class="output execute_result" data-execution_count="10">
+        <pre><code>[&#39;the project gutenberg ebook of the republic by plato this ebook is for the use of anyone anywhere in the united states and most other parts of the world at no cost and with almost no restrictions whatsoever&#39;,
+ &#39; you may copy it give it away or re use it under the terms of the project gutenberg license included with this ebook or online at &#39;,
+ &#39; if you are not located in the united states you will have to check the laws of the country where you are located before using this ebook&#39;,
+ &#39; title the republic author plato translator b&#39;,
+ &#39; jowett release date october ebook most recently updated september language english produced by sue asscher and david widger start of the project gutenberg ebook the republic the republic by plato translated by benjamin jowett note see also the republic by plato jowett ebook contents introduction and analysis&#39;]</code></pre>
+      </div>
+    </div>
+    <div
+      class="cell code"
+      data-colab='{"base_uri":"https://localhost:8080/"}'
+      id="27mrc_XQQKh1"
+      data-outputId="73ab968d-d199-495d-96be-91945d435683"
+    >
+      <div class="sourceCode" id="cb18">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co">#After the clean up procress we have 6,309 sentences compaired to 7,012 setences before the cleaning process</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(pro_sentences)</span></code></pre>
+      </div>
+      <div class="output execute_result" data-execution_count="11">
+        <pre><code>6309</code></pre>
+      </div>
+    </div>
+    <section id="note" class="cell markdown">
+      <h4>Note:</h4>
+      <p>
+        Only using 700 sentences out of 6,309 sentences after the cleaning
+        process. Only 700 sentences were used because the computer power needed
+        to analyze for sentences did not improve the model and took up to much
+        computer resources. 700 sentences of data are enough to train the model.
+      </p>
+    </section>
+    <div
+      class="cell code"
+      data-colab='{"height":54,"base_uri":"https://localhost:8080/"}'
+      id="2xBGuKueMzA_"
+      data-outputId="99b57b06-9652-47c0-f687-f83a749b1038"
+    >
+      <div class="sourceCode" id="cb20">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Structuring th etext into a paragraph:</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co"># We are only using 700 sentences out of 6,309 sentences. </span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>dataText <span class="op">=</span> <span class="st">&quot;&quot;</span>.join(pro_sentences[: <span class="dv">700</span>])</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>dataText[: <span class="dv">200</span>]</span></code></pre>
+      </div>
+      <div class="output execute_result" data-execution_count="15">
+        <div class="sourceCode" id="cb21">
+          <pre
+            class="sourceCode json"
+          ><code class="sourceCode json"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;type&quot;</span><span class="fu">:</span><span class="st">&quot;string&quot;</span><span class="fu">}</span></span></code></pre>
+        </div>
+      </div>
+    </div>
+    <div class="cell code" id="w8_pSH7pNSgY">
+      <div class="sourceCode" id="cb22">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># turn a doc into clean tokens</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> clean_doc(doc):</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># replace &#39;--&#39; with a space &#39; &#39;</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    doc <span class="op">=</span> doc.replace(<span class="st">&#39;--&#39;</span>, <span class="st">&#39; &#39;</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># split into tokens by white space</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    tokens <span class="op">=</span> doc.split()</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># remove punctuation from each token</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    table <span class="op">=</span> <span class="bu">str</span>.maketrans(<span class="st">&#39;&#39;</span>, <span class="st">&#39;&#39;</span>, string.punctuation)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    tokens <span class="op">=</span> [w.translate(table) <span class="cf">for</span> w <span class="kw">in</span> tokens]</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># remove remaining tokens that are not alphabetic</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>    tokens <span class="op">=</span> [word <span class="cf">for</span> word <span class="kw">in</span> tokens <span class="cf">if</span> word.isalpha()]</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># make lower case</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    tokens <span class="op">=</span> [word.lower() <span class="cf">for</span> word <span class="kw">in</span> tokens]</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tokens</span></code></pre>
+      </div>
+    </div>
+    <div
+      class="cell code"
+      data-colab='{"base_uri":"https://localhost:8080/"}'
+      id="qi2-sYwTNW1L"
+      data-outputId="bf99516b-fd11-44a6-9124-6149f0032658"
+    >
+      <div class="sourceCode" id="cb23">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># clean document</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>tokens <span class="op">=</span> clean_doc(dataText)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(tokens[:<span class="dv">200</span>])</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&#39;Total Tokens: </span><span class="sc">%d</span><span class="st">&#39;</span> <span class="op">%</span> <span class="bu">len</span>(tokens))</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&#39;Unique Tokens: </span><span class="sc">%d</span><span class="st">&#39;</span> <span class="op">%</span> <span class="bu">len</span>(<span class="bu">set</span>(tokens)))</span></code></pre>
+      </div>
+      <div class="output stream stdout">
+        <pre><code>[&#39;the&#39;, &#39;project&#39;, &#39;gutenberg&#39;, &#39;ebook&#39;, &#39;of&#39;, &#39;the&#39;, &#39;republic&#39;, &#39;by&#39;, &#39;plato&#39;, &#39;this&#39;, &#39;ebook&#39;, &#39;is&#39;, &#39;for&#39;, &#39;the&#39;, &#39;use&#39;, &#39;of&#39;, &#39;anyone&#39;, &#39;anywhere&#39;, &#39;in&#39;, &#39;the&#39;, &#39;united&#39;, &#39;states&#39;, &#39;and&#39;, &#39;most&#39;, &#39;other&#39;, &#39;parts&#39;, &#39;of&#39;, &#39;the&#39;, &#39;world&#39;, &#39;at&#39;, &#39;no&#39;, &#39;cost&#39;, &#39;and&#39;, &#39;with&#39;, &#39;almost&#39;, &#39;no&#39;, &#39;restrictions&#39;, &#39;whatsoever&#39;, &#39;you&#39;, &#39;may&#39;, &#39;copy&#39;, &#39;it&#39;, &#39;give&#39;, &#39;it&#39;, &#39;away&#39;, &#39;or&#39;, &#39;re&#39;, &#39;use&#39;, &#39;it&#39;, &#39;under&#39;, &#39;the&#39;, &#39;terms&#39;, &#39;of&#39;, &#39;the&#39;, &#39;project&#39;, &#39;gutenberg&#39;, &#39;license&#39;, &#39;included&#39;, &#39;with&#39;, &#39;this&#39;, &#39;ebook&#39;, &#39;or&#39;, &#39;online&#39;, &#39;at&#39;, &#39;if&#39;, &#39;you&#39;, &#39;are&#39;, &#39;not&#39;, &#39;located&#39;, &#39;in&#39;, &#39;the&#39;, &#39;united&#39;, &#39;states&#39;, &#39;you&#39;, &#39;will&#39;, &#39;have&#39;, &#39;to&#39;, &#39;check&#39;, &#39;the&#39;, &#39;laws&#39;, &#39;of&#39;, &#39;the&#39;, &#39;country&#39;, &#39;where&#39;, &#39;you&#39;, &#39;are&#39;, &#39;located&#39;, &#39;before&#39;, &#39;using&#39;, &#39;this&#39;, &#39;ebook&#39;, &#39;title&#39;, &#39;the&#39;, &#39;republic&#39;, &#39;author&#39;, &#39;plato&#39;, &#39;translator&#39;, &#39;b&#39;, &#39;jowett&#39;, &#39;release&#39;, &#39;date&#39;, &#39;october&#39;, &#39;ebook&#39;, &#39;most&#39;, &#39;recently&#39;, &#39;updated&#39;, &#39;september&#39;, &#39;language&#39;, &#39;english&#39;, &#39;produced&#39;, &#39;by&#39;, &#39;sue&#39;, &#39;asscher&#39;, &#39;and&#39;, &#39;david&#39;, &#39;widger&#39;, &#39;start&#39;, &#39;of&#39;, &#39;the&#39;, &#39;project&#39;, &#39;gutenberg&#39;, &#39;ebook&#39;, &#39;the&#39;, &#39;republic&#39;, &#39;the&#39;, &#39;republic&#39;, &#39;by&#39;, &#39;plato&#39;, &#39;translated&#39;, &#39;by&#39;, &#39;benjamin&#39;, &#39;jowett&#39;, &#39;note&#39;, &#39;see&#39;, &#39;also&#39;, &#39;the&#39;, &#39;republic&#39;, &#39;by&#39;, &#39;plato&#39;, &#39;jowett&#39;, &#39;ebook&#39;, &#39;contents&#39;, &#39;introduction&#39;, &#39;and&#39;, &#39;analysis&#39;, &#39;the&#39;, &#39;republic&#39;, &#39;of&#39;, &#39;plato&#39;, &#39;is&#39;, &#39;the&#39;, &#39;longest&#39;, &#39;of&#39;, &#39;his&#39;, &#39;works&#39;, &#39;with&#39;, &#39;the&#39;, &#39;exception&#39;, &#39;of&#39;, &#39;the&#39;, &#39;laws&#39;, &#39;and&#39;, &#39;is&#39;, &#39;certainly&#39;, &#39;the&#39;, &#39;greatest&#39;, &#39;of&#39;, &#39;them&#39;, &#39;there&#39;, &#39;are&#39;, &#39;nearer&#39;, &#39;approaches&#39;, &#39;to&#39;, &#39;modern&#39;, &#39;metaphysics&#39;, &#39;in&#39;, &#39;the&#39;, &#39;philebus&#39;, &#39;and&#39;, &#39;in&#39;, &#39;the&#39;, &#39;sophist&#39;, &#39;the&#39;, &#39;politicus&#39;, &#39;or&#39;, &#39;statesman&#39;, &#39;is&#39;, &#39;more&#39;, &#39;ideal&#39;, &#39;the&#39;, &#39;form&#39;, &#39;and&#39;, &#39;institutions&#39;, &#39;of&#39;, &#39;the&#39;, &#39;state&#39;, &#39;are&#39;, &#39;more&#39;, &#39;clearly&#39;, &#39;drawn&#39;]
+Total Tokens: 21735
+Unique Tokens: 3548
+</code></pre>
+      </div>
+    </div>
+    <section id="define-input-and-output" class="cell markdown">
+      <h3>Define Input and Output:</h3>
+      <p>
+        Here we create a for loop that we organize our sequence of tokens to
+        create our input of data and create an independent variable. The length
+        of the sequences of tokens is 51 words. The first 50 words will be used
+        as input (the sample size) for the model, and the 51st word will be used
+        to create an independent variable that would be used for predicting the
+        word in our model. We will predict by making X= 50 words as input and Y=
+        1(51) word as the independent variable for the model.
+      </p>
+      <h4 id="x-list50-words---sample-input">
+        X= List[50 words] -&gt; Sample Input
+      </h4>
+      <h4 id="ylist1-word---this-is-the-predicting-word-for-our-model">
+        Y=List[1 word] -&gt; This is the Predicting word for our model
+      </h4>
+    </section>
+    <div
+      class="cell code"
+      data-colab='{"base_uri":"https://localhost:8080/"}'
+      id="cuD679t_Na-n"
+      data-outputId="75284862-24fb-4357-e9bc-5016b12fa177"
+    >
+      <div class="sourceCode" id="cb25">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># organize into sequences of tokens to create our input data</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="co">#Creating a list that has 51 words</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="co">#the words will be input and the 51 word will be the independent variable</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="co">#The 51 word will be the word we use to predict</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>length <span class="op">=</span> <span class="dv">50</span> <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>sequences <span class="op">=</span> <span class="bu">list</span>()</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(length, <span class="bu">len</span>(tokens)):</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># select sequence of tokens</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    seq <span class="op">=</span> tokens[i<span class="op">-</span>length:i]</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># convert into a line</span></span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    line <span class="op">=</span> <span class="st">&#39; &#39;</span>.join(seq)</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># store</span></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    sequences.append(line)</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&#39;Total Sequences: </span><span class="sc">%d</span><span class="st">&#39;</span> <span class="op">%</span> <span class="bu">len</span>(sequences))</span></code></pre>
+      </div>
+      <div class="output stream stdout">
+        <pre><code>Total Sequences: 21684
+</code></pre>
+      </div>
+    </div>
+    <div class="cell code" id="bfJ8XWP7NjUS">
+      <div class="sourceCode" id="cb27">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># save sequences to file</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="co"># save tokens to file, one dialog per line</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> save_doc(lines, filename):</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> <span class="st">&#39;</span><span class="ch">\n</span><span class="st">&#39;</span>.join(lines)</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">file</span> <span class="op">=</span> <span class="bu">open</span>(filename, <span class="st">&#39;w&#39;</span>)</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">file</span>.write(data)</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">file</span>.close()</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>out_filename <span class="op">=</span> <span class="st">&#39;Dataset/republic_sequences.txt&#39;</span></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>save_doc(sequences, out_filename)</span></code></pre>
+      </div>
+    </div>
+    <div class="cell code" id="n1xwkNOvNsP_">
+      <div class="sourceCode" id="cb28">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>in_filename <span class="op">=</span> <span class="st">&#39;Dataset/republic_sequences.txt&#39;</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>doc <span class="op">=</span> load_doc(in_filename)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>lines <span class="op">=</span> doc.split(<span class="st">&#39;</span><span class="ch">\n</span><span class="st">&#39;</span>)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="co"># integer encode sequences of words</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>tokenizer <span class="op">=</span> Tokenizer()</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>tokenizer.fit_on_texts(lines)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Transforming my regular texts into numberical ones like the list of vectors</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>sequences <span class="op">=</span> tokenizer.texts_to_sequences(lines)</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a><span class="co"># vocabulary size meaning the number of unqunie words</span></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>vocab_size <span class="op">=</span> <span class="bu">len</span>(tokenizer.word_index) <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Separate into input and output</span></span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert the sequences into a array to bulid our X and Y variables</span></span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>sequences <span class="op">=</span> array(sequences)</span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>X, y <span class="op">=</span> sequences[:,:<span class="op">-</span><span class="dv">1</span>], sequences[:,<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> to_categorical(y, num_classes<span class="op">=</span>vocab_size)</span>
+<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a>seq_length <span class="op">=</span> X.shape[<span class="dv">1</span>]</span></code></pre>
+      </div>
+    </div>
+    <section id="define-model" class="cell markdown">
+      <h3>Define Model:</h3>
+      <p>
+        Here is the code section where we define and train our model. First, we
+        start by defining our model and see how it does on the dataset we have.
+        We are using LSTM because it has feedback connection and connection
+        architecture that helps to understand the entire sequence of data to
+        remember the entire sequence data and helps improve the model's accuracy
+        and predictive power. For the datasets with many sequences, LSTM models
+        are good at processing the data sequence. The LSTM helps the model
+        understand the output layer and what is going on in the first layer.
+      </p>
+      <p><img src="image-3.png" alt="image.png" /></p>
+    </section>
+    <div
+      class="cell code"
+      data-colab='{"base_uri":"https://localhost:8080/"}'
+      id="MuBjmCLNN2X3"
+      data-outputId="f9e1e438-531f-431c-fc66-1970aa4e947e"
+    >
+      <div class="sourceCode" id="cb29">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define model</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> Sequential()</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="co">#Embedding the model use vocab_size is to create vector and vector for each word</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>model.add(Embedding(vocab_size, <span class="dv">50</span>, input_length<span class="op">=</span>seq_length))</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="co">#Using the LSTM function with input to 50 tokens or words</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>model.add(LSTM(<span class="dv">50</span>, return_sequences<span class="op">=</span><span class="va">True</span>))</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>model.add(LSTM(<span class="dv">50</span>))</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a><span class="co">#In our model, we are classified by taking the input variable and classifying unique words used for the prediction </span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a><span class="co">#of our model. Then we use the words to make the prediction. </span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="co">#Dense model understanding our input for the 50 words</span></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>model.add(Dense(<span class="dv">50</span>, activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>))</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a><span class="co">#Desse model to understand the vocab_size and use the activation function softmax which is used for classification</span></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>model.add(Dense(vocab_size, activation<span class="op">=</span><span class="st">&#39;softmax&#39;</span>))</span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model.summary())</span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a><span class="co"># compile model</span></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>model.<span class="bu">compile</span>(loss<span class="op">=</span><span class="st">&#39;categorical_crossentropy&#39;</span>, optimizer<span class="op">=</span><span class="st">&#39;adam&#39;</span>, metrics<span class="op">=</span>[<span class="st">&#39;accuracy&#39;</span>])</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>batch_size<span class="op">=</span><span class="dv">128</span></span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>epochs<span class="op">=</span><span class="dv">50</span></span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>model.fit(X, y, batch_size<span class="op">=</span>batch_size, epochs<span class="op">=</span>epochs)</span></code></pre>
+      </div>
+      <div class="output stream stdout">
+        <pre><code>Model: &quot;sequential_1&quot;
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ embedding_1 (Embedding)     (None, 50, 50)            177450    
+                                                                 
+ lstm_2 (LSTM)               (None, 50, 50)            20200     
+                                                                 
+ lstm_3 (LSTM)               (None, 50)                20200     
+                                                                 
+ dense_2 (Dense)             (None, 50)                2550      
+                                                                 
+ dense_3 (Dense)             (None, 3549)              180999    
+                                                                 
+=================================================================
+Total params: 401,399
+Trainable params: 401,399
+Non-trainable params: 0
+_________________________________________________________________
+None
+Epoch 1/50
+170/170 [==============================] - 25s 120ms/step - loss: 6.6283 - accuracy: 0.0831
+Epoch 2/50
+170/170 [==============================] - 20s 119ms/step - loss: 6.1222 - accuracy: 0.0843
+Epoch 3/50
+170/170 [==============================] - 20s 119ms/step - loss: 5.9787 - accuracy: 0.0904
+Epoch 4/50
+170/170 [==============================] - 20s 118ms/step - loss: 5.8110 - accuracy: 0.1136
+Epoch 5/50
+170/170 [==============================] - 20s 119ms/step - loss: 5.6685 - accuracy: 0.1232
+Epoch 6/50
+170/170 [==============================] - 22s 129ms/step - loss: 5.5670 - accuracy: 0.1287
+Epoch 7/50
+170/170 [==============================] - 21s 123ms/step - loss: 5.4900 - accuracy: 0.1319
+Epoch 8/50
+170/170 [==============================] - 21s 121ms/step - loss: 5.4197 - accuracy: 0.1360
+Epoch 9/50
+170/170 [==============================] - 21s 123ms/step - loss: 5.3558 - accuracy: 0.1394
+Epoch 10/50
+170/170 [==============================] - 22s 128ms/step - loss: 5.3001 - accuracy: 0.1426
+Epoch 11/50
+170/170 [==============================] - 22s 128ms/step - loss: 5.2517 - accuracy: 0.1461
+Epoch 12/50
+170/170 [==============================] - 21s 125ms/step - loss: 5.2090 - accuracy: 0.1487
+Epoch 13/50
+170/170 [==============================] - 22s 128ms/step - loss: 5.1653 - accuracy: 0.1537
+Epoch 14/50
+170/170 [==============================] - 21s 126ms/step - loss: 5.1244 - accuracy: 0.1563
+Epoch 15/50
+170/170 [==============================] - 21s 122ms/step - loss: 5.0810 - accuracy: 0.1600
+Epoch 16/50
+170/170 [==============================] - 20s 119ms/step - loss: 5.0371 - accuracy: 0.1630
+Epoch 17/50
+170/170 [==============================] - 20s 120ms/step - loss: 4.9889 - accuracy: 0.1669
+Epoch 18/50
+170/170 [==============================] - 20s 119ms/step - loss: 4.9458 - accuracy: 0.1706
+Epoch 19/50
+170/170 [==============================] - 21s 122ms/step - loss: 4.8946 - accuracy: 0.1740
+Epoch 20/50
+170/170 [==============================] - 21s 121ms/step - loss: 4.8453 - accuracy: 0.1780
+Epoch 21/50
+170/170 [==============================] - 20s 119ms/step - loss: 4.7958 - accuracy: 0.1814
+Epoch 22/50
+170/170 [==============================] - 20s 119ms/step - loss: 4.7466 - accuracy: 0.1833
+Epoch 23/50
+170/170 [==============================] - 20s 119ms/step - loss: 4.6949 - accuracy: 0.1863
+Epoch 24/50
+170/170 [==============================] - 20s 120ms/step - loss: 4.6473 - accuracy: 0.1906
+Epoch 25/50
+170/170 [==============================] - 21s 121ms/step - loss: 4.5978 - accuracy: 0.1916
+Epoch 26/50
+170/170 [==============================] - 21s 121ms/step - loss: 4.5498 - accuracy: 0.1951
+Epoch 27/50
+170/170 [==============================] - 20s 120ms/step - loss: 4.5037 - accuracy: 0.1981
+Epoch 28/50
+170/170 [==============================] - 20s 119ms/step - loss: 4.4519 - accuracy: 0.2008
+Epoch 29/50
+170/170 [==============================] - 20s 119ms/step - loss: 4.4069 - accuracy: 0.2031
+Epoch 30/50
+170/170 [==============================] - 20s 118ms/step - loss: 4.3608 - accuracy: 0.2070
+Epoch 31/50
+170/170 [==============================] - 20s 120ms/step - loss: 4.3129 - accuracy: 0.2091
+Epoch 32/50
+170/170 [==============================] - 20s 118ms/step - loss: 4.2663 - accuracy: 0.2122
+Epoch 33/50
+170/170 [==============================] - 20s 119ms/step - loss: 4.2238 - accuracy: 0.2161
+Epoch 34/50
+170/170 [==============================] - 20s 118ms/step - loss: 4.1812 - accuracy: 0.2183
+Epoch 35/50
+170/170 [==============================] - 20s 120ms/step - loss: 4.1387 - accuracy: 0.2209
+Epoch 36/50
+170/170 [==============================] - 20s 118ms/step - loss: 4.0970 - accuracy: 0.2239
+Epoch 37/50
+170/170 [==============================] - 20s 120ms/step - loss: 4.0553 - accuracy: 0.2276
+Epoch 38/50
+170/170 [==============================] - 20s 120ms/step - loss: 4.0153 - accuracy: 0.2285
+Epoch 39/50
+170/170 [==============================] - 20s 119ms/step - loss: 3.9730 - accuracy: 0.2336
+Epoch 40/50
+170/170 [==============================] - 20s 120ms/step - loss: 3.9365 - accuracy: 0.2352
+Epoch 41/50
+170/170 [==============================] - 20s 118ms/step - loss: 3.8928 - accuracy: 0.2390
+Epoch 42/50
+170/170 [==============================] - 20s 119ms/step - loss: 3.8526 - accuracy: 0.2400
+Epoch 43/50
+170/170 [==============================] - 21s 122ms/step - loss: 3.8142 - accuracy: 0.2449
+Epoch 44/50
+170/170 [==============================] - 20s 121ms/step - loss: 3.7788 - accuracy: 0.2471
+Epoch 45/50
+170/170 [==============================] - 21s 125ms/step - loss: 3.7364 - accuracy: 0.2492
+Epoch 46/50
+170/170 [==============================] - 21s 121ms/step - loss: 3.7004 - accuracy: 0.2534
+Epoch 47/50
+170/170 [==============================] - 20s 120ms/step - loss: 3.6622 - accuracy: 0.2575
+Epoch 48/50
+170/170 [==============================] - 20s 119ms/step - loss: 3.6262 - accuracy: 0.2591
+Epoch 49/50
+170/170 [==============================] - 20s 119ms/step - loss: 3.5933 - accuracy: 0.2647
+Epoch 50/50
+170/170 [==============================] - 20s 120ms/step - loss: 3.5530 - accuracy: 0.2711
+</code></pre>
+      </div>
+      <div class="output execute_result" data-execution_count="22">
+        <pre><code>&lt;keras.callbacks.History at 0x7f342e611a50&gt;</code></pre>
+      </div>
+    </div>
+    <div class="cell markdown">
+      <h3 id="first-observation">First Observation:</h3>
+      <p>
+        After testing our model, For the 50 words are tokens, our accuracy only
+        reached 27.11 percent at the 50 callbacks. That is not much but the
+        results, but also it is not a large cycle. There are two reasons for our
+        accuracy; however, as we can see, the model's accuracy increases as the
+        callbacks increase. As the callbacks increase, the accuracy of the model
+        also increases. Also, we can see the loss is also decreasing as the
+        callbacks increase. We would have gotten better accuracy if we were to
+        do more callbacks and our training size sample.
+      </p>
+      <h3 id="second-observation">Second Observation:</h3>
+      <p>
+        I took the data from the center first. I only wrote 700 sentences versus
+        the 6000 sentences. If we were to use more data or model would also
+        improve; however, there's also a limitation due to the Computer
+        Resources I had. However, I am not sure if the increase in that sentence
+        size dramatically makes a difference in the accuracy of our model.
+        However, the acceptable precision depends on many factors, and for this
+        project, an accuracy of about 27% is acceptable.
+      </p>
+    </div>
+    <div class="cell code" id="3dTeDGBkN39c">
+      <div class="sourceCode" id="cb32">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># save the model to file</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>model.save(<span class="st">&quot;Dataset/DataScienceModels/nexWordPredict/nextWord.h5&quot;</span>)</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="co"># save the tokenizer</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>dump(tokenizer, <span class="bu">open</span>(<span class="st">&#39;Dataset/DataScienceModels/tokenizer.pkl&#39;</span>, <span class="st">&#39;wb&#39;</span>))</span></code></pre>
+      </div>
+    </div>
+    <div class="cell code" id="VyS3h_cHPSjB">
+      <div class="sourceCode" id="cb33">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># generate a sequence from a language model to test our model</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> generate_seq(model, tokenizer, seq_length, seed_text, n_words):</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> <span class="bu">list</span>()</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>    in_text <span class="op">=</span> seed_text</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># generate a fixed number of words</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(n_words):</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># encode the text as integer</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>        encoded <span class="op">=</span> tokenizer.texts_to_sequences([in_text])[<span class="dv">0</span>]</span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>        <span class="co"># truncate sequences to a fixed length</span></span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">#padding function for to make word size</span></span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>        encoded <span class="op">=</span> pad_sequences([encoded], maxlen<span class="op">=</span>seq_length, truncating<span class="op">=</span><span class="st">&#39;pre&#39;</span>)</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># predict probabilities for each word</span></span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>        <span class="co"># yhat = model.predict_classes(encoded, verbose=0)</span></span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>        predict_x<span class="op">=</span>model.predict(encoded) </span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>        yhat<span class="op">=</span>np.argmax(predict_x,axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>        <span class="co"># map predicted word index to word</span></span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>        out_word <span class="op">=</span> <span class="st">&#39;&#39;</span></span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> word, index <span class="kw">in</span> tokenizer.word_index.items():</span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> index <span class="op">==</span> yhat:</span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>                out_word <span class="op">=</span> word</span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span></span>
+<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a>        <span class="co"># append to input</span></span>
+<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>        in_text <span class="op">+=</span> <span class="st">&#39; &#39;</span> <span class="op">+</span> out_word</span>
+<span id="cb33-26"><a href="#cb33-26" aria-hidden="true" tabindex="-1"></a>        result.append(out_word)</span>
+<span id="cb33-27"><a href="#cb33-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&#39; &#39;</span>.join(result)</span></code></pre>
+      </div>
+    </div>
+    <div
+      class="cell code"
+      data-colab='{"base_uri":"https://localhost:8080/"}'
+      id="uCkTMAUeXhTb"
+      data-outputId="859bab37-44fb-4164-d339-a23e883f87bf"
+    >
+      <div class="sourceCode" id="cb34">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load cleaned text sequences</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>in_filename <span class="op">=</span> <span class="st">&#39;Dataset/republic_sequences.txt&#39;</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>doc <span class="op">=</span> load_doc(in_filename)</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>lines <span class="op">=</span> doc.split(<span class="st">&#39;</span><span class="ch">\n</span><span class="st">&#39;</span>)</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>seq_length <span class="op">=</span> <span class="bu">len</span>(lines[<span class="dv">0</span>].split()) <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">len</span>(lines))</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(lines[<span class="dv">0</span>])</span></code></pre>
+      </div>
+      <div class="output stream stdout">
+        <pre><code>21684
+the project gutenberg ebook of the republic by plato this ebook is for the use of anyone anywhere in the united states and most other parts of the world at no cost and with almost no restrictions whatsoever you may copy it give it away or re use it under the
+</code></pre>
+      </div>
+    </div>
+    <div
+      class="cell code"
+      data-colab='{"base_uri":"https://localhost:8080/"}'
+      id="ljsZ7iI0Xra8"
+      data-outputId="eaddaf21-827a-42f3-a149-1b5fb718ae76"
+    >
+      <div class="sourceCode" id="cb36">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load the model</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> load_model(<span class="st">&quot;Dataset/DataScienceModels/nexWordPredict/nextWord.h5&quot;</span>)</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="co"># load the tokenizer</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>tokenizer <span class="op">=</span> load(<span class="bu">open</span>(<span class="st">&#39;Dataset/DataScienceModels/tokenizer.pkl&#39;</span>, <span class="st">&#39;rb&#39;</span>))</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="co"># select a seed text</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>seed_text <span class="op">=</span> lines[randint(<span class="dv">0</span>,<span class="bu">len</span>(lines))]</span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(seed_text <span class="op">+</span> <span class="st">&#39;</span><span class="ch">\n</span><span class="st">&#39;</span>)</span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a><span class="co"># generate new text</span></span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>generated <span class="op">=</span> generate_seq(model, tokenizer, seq_length, seed_text, <span class="dv">12</span>)</span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(generated)</span></code></pre>
+      </div>
+      <div class="output stream stdout">
+        <pre><code>after ages which few great writers have ever been able to anticipate for themselves they do not perceive the want of connexion in their own writings or the gaps in their systems which are visible enough to those who come after them in the beginnings of literature and philosophy amid the
+
+best of good the republic is not not to be the embodiment
+</code></pre>
+      </div>
+    </div>
+    <div class="cell markdown" id="mb1g4owwX5Bq">
+      <h3 id="input">Input:</h3>
+      <p><img src="image.png" alt="image.png" /></p>
+      <p>
+        We load the model file and the tokenizer file that were developed in our
+        analysis. We get a random sentence from our file and we assign it to the
+        seed_text variable. We can see in the diagram. We have a sentence of 50
+        words for the model to analyze.
+      </p>
+      <h3 id="output">Output:</h3>
+      <p><img src="image-2.png" alt="image-2.png" /></p>
+      <p>
+        As the predicted output from the generated variable, in the text sample
+        above. However, we notice that our predicted output repeats the word
+        “not” twice. Although out model predicts word based on the model we
+        develop, we also have to consider that our current model is only about
+        27 percent accurate—the fact seems to fit what output we got in the
+        diagram above. Keep in mind that we only used 50 callbacks when training
+        the model. As the callbacks in our training dataset increase, the
+        model's accuracy also increases, and we can also see that the loss is
+        also decreasing as the callbacks increase in the training sample. If we
+        were to do more callbacks and our training size sample, we would have
+        gotten better accuracy.
+      </p>
+    </div>
+    <div class="cell code" id="CAxYTMVriL1b">
+      <div class="sourceCode" id="cb38">
+        <pre
+          class="sourceCode python"
+        ><code class="sourceCode python"></code></pre>
+      </div>
+    </div>
+  </body>
+</html>
